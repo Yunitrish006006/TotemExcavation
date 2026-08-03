@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "group": "hammer_copper",
+  "key": {
+    "#": "minecraft:copper_ingot",
+    "|": "minecraft:stick"
+  },
+  "pattern": [
+    "###",
+    "#|#",
+    " | "
+  ],
+  "result": {
+    "id": "totem:excavation/copper_hammer",
+    "count": 1
+  }
+}

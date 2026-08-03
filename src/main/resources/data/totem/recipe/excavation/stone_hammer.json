@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "group": "hammer_stone",
+  "key": {
+    "#": "#minecraft:stone_tool_materials",
+    "|": "minecraft:stick"
+  },
+  "pattern": [
+    "###",
+    "#|#",
+    " | "
+  ],
+  "result": {
+    "id": "totem:excavation/stone_hammer",
+    "count": 1
+  }
+}

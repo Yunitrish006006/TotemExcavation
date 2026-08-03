@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "group": "hammer_diamond",
+  "key": {
+    "#": "#minecraft:diamond_tool_materials",
+    "|": "minecraft:stick"
+  },
+  "pattern": [
+    "###",
+    "#|#",
+    " | "
+  ],
+  "result": {
+    "id": "totem:excavation/diamond_hammer",
+    "count": 1
+  }
+}

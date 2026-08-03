@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "group": "hammer_wood",
+  "key": {
+    "#": "#minecraft:planks",
+    "|": "minecraft:stick"
+  },
+  "pattern": [
+    "###",
+    "#|#",
+    " | "
+  ],
+  "result": {
+    "id": "totem:excavation/wooden_hammer",
+    "count": 1
+  }
+}

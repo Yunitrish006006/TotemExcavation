@@ -1,0 +1,20 @@
+{
+  "itemGroup.totem_excavation.main": "Totem Excavation",
+  "tag.block.totem.excavation.hammer_efficiency": "Hammer Efficiency",
+  "tag.block.totem.excavation.hammer_mineable": "Hammer Mineable",
+  "message.totem.excavation.selection.first": "First mining corner: %s, %s, %s",
+  "message.totem.excavation.selection.second": "Second mining corner: %s, %s, %s",
+  "message.totem.excavation.selection.need_first": "Select the first mining corner while crouching first.",
+  "message.totem.excavation.selection.ineligible": "That block is not eligible for hammer excavation.",
+  "message.totem.excavation.selection.dimension": "Both mining corners must be in the same dimension.",
+  "message.totem.excavation.selection.range": "That area exceeds this hammer's %s-block axis limit.",
+  "message.totem.excavation.session.empty": "No eligible loaded blocks remain in the selected area.",
+  "message.totem.excavation.session.complete": "Excavation finished: %s blocks mined.",
+  "item.totem.excavation.wooden_hammer": "Wooden Hammer",
+  "item.totem.excavation.stone_hammer": "Stone Hammer",
+  "item.totem.excavation.copper_hammer": "Copper Hammer",
+  "item.totem.excavation.iron_hammer": "Iron Hammer",
+  "item.totem.excavation.golden_hammer": "Golden Hammer",
+  "item.totem.excavation.diamond_hammer": "Diamond Hammer",
+  "item.totem.excavation.netherite_hammer": "Netherite Hammer"
+}

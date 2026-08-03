@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "group": "hammer_netherite",
+  "key": {
+    "#": "#minecraft:netherite_tool_materials",
+    "|": "minecraft:stick"
+  },
+  "pattern": [
+    "###",
+    "#|#",
+    " | "
+  ],
+  "result": {
+    "id": "totem:excavation/netherite_hammer",
+    "count": 1
+  }
+}

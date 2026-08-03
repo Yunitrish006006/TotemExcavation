@@ -1,0 +1,20 @@
+{
+  "itemGroup.totem_excavation.main": "圖靈騰掘進",
+  "tag.block.totem.excavation.hammer_efficiency": "錘子高效方塊",
+  "tag.block.totem.excavation.hammer_mineable": "錘子可挖方塊",
+  "message.totem.excavation.selection.first": "已選擇採掘起點：%s、%s、%s",
+  "message.totem.excavation.selection.second": "已選擇採掘終點：%s、%s、%s",
+  "message.totem.excavation.selection.need_first": "請先蹲下選擇採掘起點。",
+  "message.totem.excavation.selection.ineligible": "這個方塊不能用錘子採掘。",
+  "message.totem.excavation.selection.dimension": "兩個採掘角點必須在同一維度。",
+  "message.totem.excavation.selection.range": "選取區域超過這把錘子每軸 %s 格的上限。",
+  "message.totem.excavation.session.empty": "選取區域內沒有可採掘的已載入方塊。",
+  "message.totem.excavation.session.complete": "採掘完成：已挖掘 %s 個方塊。",
+  "item.totem.excavation.wooden_hammer": "木錘",
+  "item.totem.excavation.stone_hammer": "石錘",
+  "item.totem.excavation.copper_hammer": "銅錘",
+  "item.totem.excavation.iron_hammer": "鐵錘",
+  "item.totem.excavation.golden_hammer": "金錘",
+  "item.totem.excavation.diamond_hammer": "鑽石錘",
+  "item.totem.excavation.netherite_hammer": "獄髓錘"
+}
