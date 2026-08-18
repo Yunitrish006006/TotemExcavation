@@ -1,0 +1,27 @@
+{
+  "parent": "deadrecall:excavation_manual",
+  "criteria": {
+    "crafted_wooden_hammer": {
+      "conditions": {
+        "recipe_id": "totem:excavation/wooden_hammer"
+      },
+      "trigger": "minecraft:recipe_crafted"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.deadrecall.excavation_wooden_hammer.description"
+    },
+    "icon": {
+      "id": "totem:excavation/wooden_hammer"
+    },
+    "title": {
+      "translate": "advancements.deadrecall.excavation_wooden_hammer.title"
+    }
+  },
+  "requirements": [
+    [
+      "crafted_wooden_hammer"
+    ]
+  ]
+}

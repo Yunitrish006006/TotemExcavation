@@ -1,6 +1,7 @@
 package dev.totem.excavation;
 
 import dev.totem.excavation.component.ExcavationDataComponents;
+import dev.totem.excavation.manual.ExcavationManual;
 import dev.totem.excavation.registry.ExcavationItems;
 import dev.totem.excavation.session.ExcavationSessions;
 import net.fabricmc.api.ModInitializer;
@@ -14,6 +15,7 @@ public final class TotemExcavation implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        ExcavationManual.register();
         ExcavationDataComponents.register();
         ExcavationItems.register();
         ExcavationSessions.register();
