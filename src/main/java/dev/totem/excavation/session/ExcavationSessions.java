@@ -192,7 +192,7 @@ public final class ExcavationSessions {
                 return;
             }
             if (candidates.isEmpty()) {
-                HammerSelectionService.clearSecondCorner(stack);
+                HammerSelectionService.clearSelection(stack);
                 player.sendOverlayMessage(Component.translatable("message.totem.excavation.session.empty"));
                 return;
             }
@@ -257,7 +257,7 @@ public final class ExcavationSessions {
                 return false;
             }
             if (targets.size() == candidates.size() && harvested == targets.size()) {
-                HammerSelectionService.clearSecondCorner(player.getMainHandItem());
+                HammerSelectionService.clearSelection(player.getMainHandItem());
             }
             player.sendOverlayMessage(Component.translatable(
                     "message.totem.excavation.session.complete", harvested
