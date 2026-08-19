@@ -325,9 +325,8 @@ public final class HammerContentGameTest {
                 try {
                     require(helper, allAir(helper, firstRelative, secondRelative),
                             "A fully-complete netherite session left an eligible loaded target behind");
-                    AreaSelection remaining = stack.get(ExcavationDataComponents.AREA_SELECTION);
-                    require(helper, remaining != null && !remaining.isComplete(),
-                            "A fully exhausted selection did not clear its second corner");
+                    require(helper, stack.get(ExcavationDataComponents.AREA_SELECTION) == null,
+                            "A fully exhausted selection did not clear both corners");
                     helper.succeed();
                 } finally {
                     player.discard();
