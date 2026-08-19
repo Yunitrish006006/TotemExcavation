@@ -67,6 +67,11 @@ public final class HammerSelectionService {
         }
     }
 
+    /** Clears both corners after a selection has been fully consumed by a completed excavation session. */
+    public static void clearSelection(ItemStack stack) {
+        stack.remove(ExcavationDataComponents.AREA_SELECTION);
+    }
+
     private static boolean withinRange(BlockPos first, BlockPos second, int range) {
         return Math.abs(first.getX() - second.getX()) + 1 <= range
                 && Math.abs(first.getY() - second.getY()) + 1 <= range
