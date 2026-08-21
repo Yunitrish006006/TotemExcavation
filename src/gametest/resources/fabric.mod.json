@@ -6,7 +6,8 @@
   "environment": "server",
   "entrypoints": {
     "fabric-gametest": [
-      "dev.totem.excavation.gametest.HammerContentGameTest"
+      "dev.totem.excavation.gametest.HammerContentGameTest",
+      "dev.totem.excavation.gametest.ExcavationManualGameTest"
     ]
   },
   "depends": {
