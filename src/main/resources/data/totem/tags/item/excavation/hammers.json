@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "totem:excavation/wooden_hammer",
+    "totem:excavation/stone_hammer",
+    "totem:excavation/copper_hammer",
+    "totem:excavation/iron_hammer",
+    "totem:excavation/golden_hammer",
+    "totem:excavation/diamond_hammer",
+    "totem:excavation/netherite_hammer"
+  ]
+}
