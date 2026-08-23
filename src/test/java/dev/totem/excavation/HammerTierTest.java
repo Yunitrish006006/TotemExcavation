@@ -37,7 +37,10 @@ class HammerTierTest {
         assertEquals(material.durability(), tier.durability());
         assertEquals(range, tier.baseRange());
         assertEquals(completion, tier.baseCompletion(), 0.0001F);
-        assertEquals(4.0F, tier.attackDamage());
-        assertEquals(-2.8F, tier.attackSpeed());
+        assertEquals(6.0F, tier.attackDamage());
+        assertEquals(-3.4F, tier.attackSpeed());
+        assertEquals(2.5F, tier.attackRange());
+        assertEquals(3.0F, tier.creativeAttackRange());
+        assertEquals(0.35F, tier.criticalBonusFraction());
     }
 }

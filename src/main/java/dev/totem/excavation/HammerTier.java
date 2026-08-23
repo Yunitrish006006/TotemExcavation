@@ -19,8 +19,11 @@ public enum HammerTier {
     DIAMOND("diamond", ToolMaterial.DIAMOND, 20, 0.90F),
     NETHERITE("netherite", ToolMaterial.NETHERITE, 24, 1.00F);
 
-    private static final float ATTACK_DAMAGE = 4.0F;
-    private static final float ATTACK_SPEED = -2.8F;
+    private static final float ATTACK_DAMAGE = 6.0F;
+    private static final float ATTACK_SPEED = -3.4F;
+    private static final float ATTACK_RANGE = 2.5F;
+    private static final float CREATIVE_ATTACK_RANGE = 3.0F;
+    private static final float CRITICAL_BONUS_FRACTION = 0.35F;
     private static final int EFFICIENCY_RANGE_PER_LEVEL = 2;
     private static final float EFFICIENCY_COMPLETION_PER_LEVEL = 0.05F;
     private static final float SILK_TOUCH_COMPLETION_PER_LEVEL = 0.20F;
@@ -63,6 +66,18 @@ public enum HammerTier {
 
     public float attackSpeed() {
         return ATTACK_SPEED;
+    }
+
+    public float attackRange() {
+        return ATTACK_RANGE;
+    }
+
+    public float creativeAttackRange() {
+        return CREATIVE_ATTACK_RANGE;
+    }
+
+    public float criticalBonusFraction() {
+        return CRITICAL_BONUS_FRACTION;
     }
 
     public int maxRange(ServerLevel level, ItemStack stack) {
