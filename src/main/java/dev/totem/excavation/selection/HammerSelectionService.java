@@ -8,56 +8,73 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 
-/** Server-authoritative first/second-corner updates for a single held stack. */
+/** Applies the two-click selection state machine to one server-owned hammer stack. */
 public final class HammerSelectionService {
     private HammerSelectionService() {
     }
 
-    public static InteractionResult select(
+    public static SelectionAction select(
             ServerPlayer player,
-            InteractionHand hand,
             ItemStack stack,
             HammerItem hammer,
             ServerLevel level,
-            BlockPos target,
-            boolean selectingFirst
+            BlockPos target
     ) {
         if (!level.getBlockState(target).is(ExcavationTags.HAMMER_MINEABLE)) {
             player.sendOverlayMessage(Component.translatable("message.totem.excavation.selection.ineligible"));
-            return InteractionResult.FAIL;
-        }
-        if (selectingFirst) {
-            stack.set(ExcavationDataComponents.AREA_SELECTION, AreaSelection.firstCorner(level.dimension(), target));
-            player.sendOverlayMessage(Component.translatable(
-                    "message.totem.excavation.selection.first", target.getX(), target.getY(), target.getZ()
-            ));
-            return InteractionResult.SUCCESS;
+            return SelectionAction.REJECTED;
         }
 
         AreaSelection selection = stack.get(ExcavationDataComponents.AREA_SELECTION);
         if (selection == null) {
-            player.sendOverlayMessage(Component.translatable("message.totem.excavation.selection.need_first"));
-            return InteractionResult.FAIL;
+            stack.set(ExcavationDataComponents.AREA_SELECTION, AreaSelection.firstCorner(level.dimension(), target));
+            player.sendOverlayMessage(Component.translatable(
+                    "message.totem.excavation.selection.first", target.getX(), target.getY(), target.getZ()
+            ));
+            return SelectionAction.FIRST_SET;
         }
+
         if (!selection.dimension().equals(level.dimension())) {
-            player.sendOverlayMessage(Component.translatable("message.totem.excavation.selection.dimension"));
-            return InteractionResult.FAIL;
+            return restart(player, stack, level, target);
         }
+
+        BlockPos second = selection.secondCorner().orElse(null);
+        if (target.equals(selection.firstCorner()) || target.equals(second)) {
+            clearSelection(stack);
+            player.sendOverlayMessage(Component.translatable("message.totem.excavation.selection.cleared"));
+            return SelectionAction.CLEARED;
+        }
+
+        if (second != null) {
+            return restart(player, stack, level, target);
+        }
+
         int range = hammer.tier().maxRange(level, stack);
         if (!withinRange(selection.firstCorner(), target, range)) {
             player.sendOverlayMessage(Component.translatable("message.totem.excavation.selection.range", range));
-            return InteractionResult.FAIL;
+            return SelectionAction.REJECTED;
         }
 
         stack.set(ExcavationDataComponents.AREA_SELECTION, selection.withSecondCorner(target));
         player.sendOverlayMessage(Component.translatable(
                 "message.totem.excavation.selection.second", target.getX(), target.getY(), target.getZ()
         ));
-        return InteractionResult.SUCCESS;
+        return SelectionAction.SECOND_SET;
+    }
+
+    private static SelectionAction restart(
+            ServerPlayer player,
+            ItemStack stack,
+            ServerLevel level,
+            BlockPos target
+    ) {
+        stack.set(ExcavationDataComponents.AREA_SELECTION, AreaSelection.firstCorner(level.dimension(), target));
+        player.sendOverlayMessage(Component.translatable(
+                "message.totem.excavation.selection.restarted", target.getX(), target.getY(), target.getZ()
+        ));
+        return SelectionAction.RESTARTED;
     }
 
     public static void clearSecondCorner(ItemStack stack) {
@@ -72,9 +89,17 @@ public final class HammerSelectionService {
         stack.remove(ExcavationDataComponents.AREA_SELECTION);
     }
 
-    private static boolean withinRange(BlockPos first, BlockPos second, int range) {
+    static boolean withinRange(BlockPos first, BlockPos second, int range) {
         return Math.abs(first.getX() - second.getX()) + 1 <= range
                 && Math.abs(first.getY() - second.getY()) + 1 <= range
                 && Math.abs(first.getZ() - second.getZ()) + 1 <= range;
+    }
+
+    public enum SelectionAction {
+        FIRST_SET,
+        SECOND_SET,
+        CLEARED,
+        RESTARTED,
+        REJECTED
     }
 }

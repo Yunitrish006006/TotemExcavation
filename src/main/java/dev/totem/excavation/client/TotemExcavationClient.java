@@ -6,6 +6,7 @@ import net.fabricmc.api.ClientModInitializer;
 public final class TotemExcavationClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        HammerSelectionClientInput.register();
         ExcavationOutlineRenderer.register();
     }
 }

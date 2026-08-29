@@ -3,14 +3,12 @@ package dev.totem.excavation.item;
 import dev.totem.excavation.ExcavationTags;
 import dev.totem.excavation.HammerTier;
 import dev.totem.excavation.registry.ExcavationItems;
-import dev.totem.excavation.selection.HammerSelectionService;
 import dev.totem.excavation.session.ExcavationSessions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -19,7 +17,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.AttackRange;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -109,34 +106,6 @@ public final class HammerItem extends Item {
     @Override
     public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
         return state.is(ExcavationTags.HAMMER_MINEABLE) && super.isCorrectToolForDrops(stack, state);
-    }
-
-    @Override
-    public InteractionResult useOn(UseOnContext context) {
-        Level level = context.getLevel();
-        if (level.isClientSide()) {
-            return InteractionResult.SUCCESS;
-        }
-        if (!(context.getPlayer() instanceof ServerPlayer player)
-                || !(level instanceof ServerLevel serverLevel)
-                || !level.getBlockState(context.getClickedPos()).is(ExcavationTags.HAMMER_MINEABLE)) {
-            return InteractionResult.PASS;
-        }
-
-        ItemStack stack = player.getItemInHand(context.getHand());
-        HammerItem hammer = ExcavationItems.hammer(stack);
-        if (hammer == null) {
-            return InteractionResult.FAIL;
-        }
-        return HammerSelectionService.select(
-                player,
-                context.getHand(),
-                stack,
-                hammer,
-                serverLevel,
-                context.getClickedPos(),
-                context.isSecondaryUseActive()
-        );
     }
 
     @Override

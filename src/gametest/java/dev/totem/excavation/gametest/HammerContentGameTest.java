@@ -5,12 +5,16 @@ import dev.totem.excavation.HammerTier;
 import dev.totem.excavation.component.AreaSelection;
 import dev.totem.excavation.component.ExcavationDataComponents;
 import dev.totem.excavation.item.HammerItem;
+import dev.totem.excavation.network.HammerSelectionNetworking;
+import dev.totem.excavation.network.HammerSelectionRequest;
 import dev.totem.excavation.registry.ExcavationItems;
 import dev.totem.excavation.selection.HammerSelectionService;
 import dev.totem.excavation.session.ExcavationSessions;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -18,9 +22,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -30,6 +36,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DropExperienceBlock;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,18 +109,241 @@ public final class HammerContentGameTest {
         try {
             player.setItemInHand(InteractionHand.MAIN_HAND, selected);
             HammerSelectionService.select(
-                    player, InteractionHand.MAIN_HAND, selected, ExcavationItems.WOODEN_HAMMER,
-                    level, first, true
+                    player, selected, ExcavationItems.WOODEN_HAMMER, level, first
             );
             HammerSelectionService.select(
-                    player, InteractionHand.MAIN_HAND, selected, ExcavationItems.WOODEN_HAMMER,
-                    level, second, false
+                    player, selected, ExcavationItems.WOODEN_HAMMER, level, second
             );
             AreaSelection selection = selected.get(ExcavationDataComponents.AREA_SELECTION);
             require(helper, selection != null && selection.isComplete(),
                     "The server did not retain both selection corners on the held stack");
             require(helper, other.get(ExcavationDataComponents.AREA_SELECTION) == null,
                     "Selection leaked to a distinct hammer stack");
+            helper.succeed();
+        } finally {
+            player.discard();
+        }
+    }
+
+    @GameTest(maxTicks = 40)
+    public void selectingTheIncompleteFirstCornerAgainClearsTheSelection(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ItemStack stack = new ItemStack(ExcavationItems.WOODEN_HAMMER);
+        BlockPos cornerRelative = new BlockPos(1, 2, 1);
+        BlockPos corner = helper.absolutePos(cornerRelative);
+        helper.setBlock(cornerRelative, Blocks.OAK_PLANKS);
+
+        try {
+            player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+            require(helper, HammerSelectionService.select(
+                            player, stack, ExcavationItems.WOODEN_HAMMER, level, corner
+                    ) == HammerSelectionService.SelectionAction.FIRST_SET,
+                    "The first crouch-attack did not set Corner A");
+            require(helper, HammerSelectionService.select(
+                            player, stack, ExcavationItems.WOODEN_HAMMER, level, corner
+                    ) == HammerSelectionService.SelectionAction.CLEARED,
+                    "Selecting Corner A again did not report a clear action");
+            require(helper, stack.get(ExcavationDataComponents.AREA_SELECTION) == null,
+                    "Selecting the same incomplete corner retained a selection");
+            helper.succeed();
+        } finally {
+            player.discard();
+        }
+    }
+
+    @GameTest(maxTicks = 40)
+    public void selectingEitherCompletedCornerClearsTheWholeSelection(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ItemStack firstStack = new ItemStack(ExcavationItems.WOODEN_HAMMER);
+        ItemStack secondStack = new ItemStack(ExcavationItems.WOODEN_HAMMER);
+        BlockPos firstRelative = new BlockPos(1, 2, 1);
+        BlockPos secondRelative = new BlockPos(2, 2, 2);
+        BlockPos first = helper.absolutePos(firstRelative);
+        BlockPos second = helper.absolutePos(secondRelative);
+        helper.setBlock(firstRelative, Blocks.OAK_PLANKS);
+        helper.setBlock(secondRelative, Blocks.OAK_PLANKS);
+
+        try {
+            for (ItemStack stack : List.of(firstStack, secondStack)) {
+                HammerSelectionService.select(player, stack, ExcavationItems.WOODEN_HAMMER, level, first);
+                HammerSelectionService.select(player, stack, ExcavationItems.WOODEN_HAMMER, level, second);
+            }
+            HammerSelectionService.select(player, firstStack, ExcavationItems.WOODEN_HAMMER, level, first);
+            HammerSelectionService.select(player, secondStack, ExcavationItems.WOODEN_HAMMER, level, second);
+
+            require(helper, firstStack.get(ExcavationDataComponents.AREA_SELECTION) == null,
+                    "Selecting completed Corner A did not clear the whole selection");
+            require(helper, secondStack.get(ExcavationDataComponents.AREA_SELECTION) == null,
+                    "Selecting completed Corner B did not clear the whole selection");
+            helper.succeed();
+        } finally {
+            player.discard();
+        }
+    }
+
+    @GameTest(maxTicks = 40)
+    public void crouchAttackSelectsWithoutBreakingOrDamagingTheHammer(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ItemStack stack = new ItemStack(ExcavationItems.WOODEN_HAMMER);
+        BlockPos targetRelative = new BlockPos(2, 2, 2);
+        BlockPos target = helper.absolutePos(targetRelative);
+        helper.setBlock(targetRelative, Blocks.OAK_PLANKS);
+
+        try {
+            player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+            player.setShiftKeyDown(true);
+            Direction face = aimAt(helper, player, target);
+            int damageBefore = stack.getDamageValue();
+
+            int slot = player.getInventory().getSelectedSlot();
+            require(helper, HammerSelectionNetworking.handleRequest(
+                            player, new HammerSelectionRequest(1L, slot, target, face)
+                    ),
+                    "The valid crouch-attack intent was rejected");
+
+            AreaSelection selection = stack.get(ExcavationDataComponents.AREA_SELECTION);
+            require(helper, selection != null && selection.firstCorner().equals(target),
+                    "The server-owned crouch-attack did not set Corner A");
+            require(helper, level.getBlockState(target).is(Blocks.OAK_PLANKS),
+                    "The selection attack destroyed its target block");
+            require(helper, stack.getDamageValue() == damageBefore,
+                    "The selection attack consumed hammer durability");
+            helper.succeed();
+        } finally {
+            player.discard();
+        }
+    }
+
+    @GameTest(maxTicks = 40)
+    public void ordinaryAttackStillFallsThroughAndMinesNormally(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ItemStack stack = new ItemStack(ExcavationItems.NETHERITE_HAMMER);
+        BlockPos targetRelative = new BlockPos(2, 2, 2);
+        BlockPos target = helper.absolutePos(targetRelative);
+        helper.setBlock(targetRelative, Blocks.OAK_PLANKS);
+
+        try {
+            player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+            player.setShiftKeyDown(false);
+            aimAt(helper, player, target);
+            require(helper, player.gameMode.destroyBlock(target),
+                    "The ordinary server-authoritative block break failed");
+            require(helper, level.getBlockState(target).isAir(),
+                    "An ordinary hammer attack did not mine the target");
+            helper.succeed();
+        } finally {
+            player.discard();
+        }
+    }
+
+    @GameTest(maxTicks = 40)
+    public void rightClickHammerPassesAndDoesNotConsumeTheOffhandPath(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ItemStack hammer = new ItemStack(ExcavationItems.WOODEN_HAMMER);
+        ItemStack shield = new ItemStack(Items.SHIELD);
+        BlockPos targetRelative = new BlockPos(2, 2, 2);
+        BlockPos target = helper.absolutePos(targetRelative);
+        helper.setBlock(targetRelative, Blocks.STONE);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(target), Direction.UP, target, false);
+
+        try {
+            player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
+            player.setItemInHand(InteractionHand.OFF_HAND, shield);
+            require(helper, hammer.useOn(new UseOnContext(player, InteractionHand.MAIN_HAND, hit))
+                            == InteractionResult.PASS,
+                    "The main-hand hammer still consumed block right-click");
+            require(helper, hammer.use(level, player, InteractionHand.MAIN_HAND) == InteractionResult.PASS,
+                    "The main-hand hammer still consumed air right-click");
+            InteractionResult offhandResult = shield.use(level, player, InteractionHand.OFF_HAND);
+            require(helper, offhandResult.consumesAction(),
+                    "The offhand shield was not usable after the hammer passed right-click");
+            require(helper, player.getUsedItemHand() == InteractionHand.OFF_HAND,
+                    "The successful fallback use did not come from the offhand");
+            helper.succeed();
+        } finally {
+            player.discard();
+        }
+    }
+
+    @GameTest(maxTicks = 40)
+    public void forgedDistanceReplayWrongSlotAndWrongStackRequestsAreRejected(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ItemStack mainHammer = new ItemStack(ExcavationItems.WOODEN_HAMMER);
+        ItemStack offhandHammer = new ItemStack(ExcavationItems.WOODEN_HAMMER);
+        BlockPos closeRelative = new BlockPos(2, 2, 2);
+        BlockPos farRelative = new BlockPos(12, 2, 2);
+        BlockPos close = helper.absolutePos(closeRelative);
+        BlockPos far = helper.absolutePos(farRelative);
+        helper.setBlock(closeRelative, Blocks.OAK_PLANKS);
+        helper.setBlock(farRelative, Blocks.OAK_PLANKS);
+
+        try {
+            player.setItemInHand(InteractionHand.MAIN_HAND, mainHammer);
+            player.setItemInHand(InteractionHand.OFF_HAND, offhandHammer);
+            player.setShiftKeyDown(true);
+            Direction closeFace = aimAt(helper, player, close);
+            int slot = player.getInventory().getSelectedSlot();
+
+            require(helper, !HammerSelectionNetworking.handleRequest(
+                            player, new HammerSelectionRequest(0L, slot, close, closeFace)
+                    ),
+                    "A non-positive request sequence was accepted");
+            require(helper, !HammerSelectionNetworking.handleRequest(
+                            player, new HammerSelectionRequest(1L, slot + 1, close, closeFace)
+                    ),
+                    "A request naming the wrong selected slot was accepted");
+            require(helper, offhandHammer.get(ExcavationDataComponents.AREA_SELECTION) == null,
+                    "A wrong-slot request changed the offhand hammer");
+
+            require(helper, !HammerSelectionNetworking.handleRequest(
+                            player, new HammerSelectionRequest(1L, slot, far, closeFace)
+                    ),
+                    "A forged out-of-reach target was not rejected");
+            require(helper, mainHammer.get(ExcavationDataComponents.AREA_SELECTION) == null,
+                    "An out-of-reach request changed the main-hand hammer");
+
+            helper.setBlock(new BlockPos(2, 2, 3), Blocks.STONE);
+            require(helper, !HammerSelectionNetworking.handleRequest(
+                            player, new HammerSelectionRequest(1L, slot, close, closeFace)
+                    ),
+                    "A target hidden behind another block was not rejected");
+            require(helper, mainHammer.get(ExcavationDataComponents.AREA_SELECTION) == null,
+                    "A blocked-line-of-sight request changed the main-hand hammer");
+
+            player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
+            require(helper, !HammerSelectionNetworking.handleRequest(
+                            player, new HammerSelectionRequest(1L, slot, close, closeFace)
+                    ),
+                    "A request with a non-hammer main hand was accepted");
+            require(helper, mainHammer.get(ExcavationDataComponents.AREA_SELECTION) == null
+                            && offhandHammer.get(ExcavationDataComponents.AREA_SELECTION) == null,
+                    "A request after changing stacks mutated a stale hammer object");
+
+            player.setItemInHand(InteractionHand.MAIN_HAND, mainHammer);
+            helper.setBlock(new BlockPos(2, 2, 3), Blocks.AIR);
+            closeFace = aimAt(helper, player, close);
+            require(helper, HammerSelectionNetworking.handleRequest(
+                            player, new HammerSelectionRequest(2L, slot, close, closeFace)
+                    ),
+                    "The valid request after rejected attempts was not accepted");
+            AreaSelection accepted = mainHammer.get(ExcavationDataComponents.AREA_SELECTION);
+            require(helper, accepted != null && accepted.firstCorner().equals(close),
+                    "The valid request did not update the exact main-hand hammer");
+            require(helper, offhandHammer.get(ExcavationDataComponents.AREA_SELECTION) == null,
+                    "The valid request leaked selection into the other hammer");
+
+            require(helper, !HammerSelectionNetworking.handleRequest(
+                            player, new HammerSelectionRequest(2L, slot, close, closeFace)
+                    ),
+                    "A replayed sequence was accepted");
+            require(helper, accepted.equals(mainHammer.get(ExcavationDataComponents.AREA_SELECTION)),
+                    "A replayed sequence changed the accepted selection");
             helper.succeed();
         } finally {
             player.discard();
@@ -135,12 +367,10 @@ public final class HammerContentGameTest {
             selectArea(helper, player, stack, ExcavationItems.WOODEN_HAMMER, firstRelative, secondRelative);
             HammerSelectionService.select(
                     player,
-                    InteractionHand.MAIN_HAND,
                     stack,
                     ExcavationItems.WOODEN_HAMMER,
                     level,
-                    helper.absolutePos(replacementFirstRelative),
-                    true
+                    helper.absolutePos(replacementFirstRelative)
             );
 
             AreaSelection selection = stack.get(ExcavationDataComponents.AREA_SELECTION);
@@ -170,12 +400,12 @@ public final class HammerContentGameTest {
             firstPlayer.setItemInHand(InteractionHand.MAIN_HAND, firstStack);
             secondPlayer.setItemInHand(InteractionHand.MAIN_HAND, secondStack);
             HammerSelectionService.select(
-                    firstPlayer, InteractionHand.MAIN_HAND, firstStack, ExcavationItems.WOODEN_HAMMER,
-                    level, helper.absolutePos(firstPlayerCorner), true
+                    firstPlayer, firstStack, ExcavationItems.WOODEN_HAMMER,
+                    level, helper.absolutePos(firstPlayerCorner)
             );
             HammerSelectionService.select(
-                    secondPlayer, InteractionHand.MAIN_HAND, secondStack, ExcavationItems.WOODEN_HAMMER,
-                    level, helper.absolutePos(secondPlayerCorner), true
+                    secondPlayer, secondStack, ExcavationItems.WOODEN_HAMMER,
+                    level, helper.absolutePos(secondPlayerCorner)
             );
 
             AreaSelection firstSelection = firstStack.get(ExcavationDataComponents.AREA_SELECTION);
@@ -196,7 +426,7 @@ public final class HammerContentGameTest {
     }
 
     @GameTest(maxTicks = 40)
-    public void crossDimensionSecondCornerLeavesTheExistingSelectionUnchanged(GameTestHelper helper) {
+    public void crossDimensionClickRestartsTheFirstCornerInTheCurrentDimension(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         ItemStack stack = new ItemStack(ExcavationItems.WOODEN_HAMMER);
@@ -209,12 +439,15 @@ public final class HammerContentGameTest {
             player.setItemInHand(InteractionHand.MAIN_HAND, stack);
             stack.set(ExcavationDataComponents.AREA_SELECTION, netherSelection);
             HammerSelectionService.select(
-                    player, InteractionHand.MAIN_HAND, stack, ExcavationItems.WOODEN_HAMMER,
-                    level, attemptedSecondCorner, false
+                    player, stack, ExcavationItems.WOODEN_HAMMER, level, attemptedSecondCorner
             );
 
-            require(helper, netherSelection.equals(stack.get(ExcavationDataComponents.AREA_SELECTION)),
-                    "A cross-dimension second corner changed the selection");
+            AreaSelection restarted = stack.get(ExcavationDataComponents.AREA_SELECTION);
+            require(helper, restarted != null
+                            && restarted.dimension().equals(level.dimension())
+                            && restarted.firstCorner().equals(attemptedSecondCorner)
+                            && !restarted.isComplete(),
+                    "A cross-dimension click did not restart Corner A in the current dimension");
             helper.succeed();
         } finally {
             player.discard();
@@ -232,8 +465,8 @@ public final class HammerContentGameTest {
         try {
             player.setItemInHand(InteractionHand.MAIN_HAND, stack);
             HammerSelectionService.select(
-                    player, InteractionHand.MAIN_HAND, stack, ExcavationItems.WOODEN_HAMMER,
-                    level, helper.absolutePos(firstRelative), true
+                    player, stack, ExcavationItems.WOODEN_HAMMER,
+                    level, helper.absolutePos(firstRelative)
             );
 
             ItemStack inventoryCopy = stack.copy();
@@ -260,12 +493,12 @@ public final class HammerContentGameTest {
         try {
             player.setItemInHand(InteractionHand.MAIN_HAND, stack);
             HammerSelectionService.select(
-                    player, InteractionHand.MAIN_HAND, stack, ExcavationItems.WOODEN_HAMMER,
-                    level, helper.absolutePos(firstRelative), true
+                    player, stack, ExcavationItems.WOODEN_HAMMER,
+                    level, helper.absolutePos(firstRelative)
             );
             HammerSelectionService.select(
-                    player, InteractionHand.MAIN_HAND, stack, ExcavationItems.WOODEN_HAMMER,
-                    level, helper.absolutePos(oversizedRelative), false
+                    player, stack, ExcavationItems.WOODEN_HAMMER,
+                    level, helper.absolutePos(oversizedRelative)
             );
 
             AreaSelection selection = stack.get(ExcavationDataComponents.AREA_SELECTION);
@@ -603,13 +836,29 @@ public final class HammerContentGameTest {
     ) {
         ServerLevel level = helper.getLevel();
         HammerSelectionService.select(
-                player, InteractionHand.MAIN_HAND, stack, hammer,
-                level, helper.absolutePos(firstRelative), true
+                player, stack, hammer, level, helper.absolutePos(firstRelative)
         );
         HammerSelectionService.select(
-                player, InteractionHand.MAIN_HAND, stack, hammer,
-                level, helper.absolutePos(secondRelative), false
+                player, stack, hammer, level, helper.absolutePos(secondRelative)
         );
+    }
+
+    private static Direction aimAt(GameTestHelper helper, ServerPlayer player, BlockPos target) {
+        player.snapTo(
+                target.getX() + 0.5D,
+                target.getY(),
+                target.getZ() + 3.5D,
+                0.0F,
+                0.0F
+        );
+        player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(target));
+        HitResult hit = player.pick(player.blockInteractionRange(), 1.0F, false);
+        require(helper, hit instanceof BlockHitResult,
+                "GameTest setup did not produce a block ray hit");
+        BlockHitResult blockHit = (BlockHitResult) hit;
+        require(helper, blockHit.getBlockPos().equals(target),
+                "GameTest setup aimed at a different block: " + blockHit.getBlockPos());
+        return blockHit.getDirection();
     }
 
     private static void fillPlanks(GameTestHelper helper, BlockPos first, BlockPos second) {

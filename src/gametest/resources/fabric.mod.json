@@ -3,11 +3,14 @@
   "id": "totem-excavation-gametest",
   "version": "1.0.0",
   "name": "Totem Excavation GameTests",
-  "environment": "server",
+  "environment": "*",
   "entrypoints": {
     "fabric-gametest": [
       "dev.totem.excavation.gametest.HammerContentGameTest",
       "dev.totem.excavation.gametest.ExcavationManualGameTest"
+    ],
+    "fabric-client-gametest": [
+      "dev.totem.excavation.client.HammerSelectionHoldClientGameTest"
     ]
   },
   "depends": {

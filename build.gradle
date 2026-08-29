@@ -19,7 +19,7 @@ fabricApi {
         createSourceSet = true
         modId = 'totem-excavation-gametest'
         enableGameTests = true
-        enableClientGameTests = false
+        enableClientGameTests = true
         eula = true
     }
 }
@@ -108,7 +108,7 @@ tasks.register("normalizeFabricApiTweakersForNamedDevRuntime") {
     }
 }
 
-tasks.matching { task -> task.name in ["runClient", "runServer", "runDatagen", "runGameTest"] }.configureEach {
+tasks.matching { task -> task.name in ["runClient", "runServer", "runDatagen", "runGameTest", "runClientGameTest"] }.configureEach {
     dependsOn("normalizeFabricApiTweakersForNamedDevRuntime")
 }
 

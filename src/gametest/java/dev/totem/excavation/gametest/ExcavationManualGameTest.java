@@ -30,7 +30,7 @@ public final class ExcavationManualGameTest {
 
     @SuppressWarnings("removal")
     @GameTest(maxTicks = 40)
-    public void realCraftingTableInteractionCreatesAndRefreshesOnlyExcavationGuide(
+    public void realCraftingTableInteractionCreatesAndRefreshesSharedExcavationManual(
             GameTestHelper helper
     ) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -43,14 +43,16 @@ public final class ExcavationManualGameTest {
             require(helper, player.getMainHandItem().is(Items.BOOK)
                             && player.getMainHandItem().getCount() == 1,
                     "Creating the Excavation guide did not consume exactly one plain book");
-            ItemStack target = takeGuide(player, SECTION_ID);
-            require(helper, target != null && exactSections(target, SECTION_ID),
-                    "The actual block interaction did not insert a target-only Excavation guide");
+            ItemStack target = takeGuide(player, TotemManualOnboarding.SECTION_ID, SECTION_ID);
+            require(helper, target != null && exactSections(
+                            target, TotemManualOnboarding.SECTION_ID, SECTION_ID
+                    ),
+                    "The interaction did not create a shared manual with Core and Excavation chapters");
             require(helper, advancementDone(player),
                     "Successful guide acquisition did not award deadrecall:excavation_manual");
 
             player.setItemInHand(InteractionHand.OFF_HAND, target);
-            int before = countGuides(player, SECTION_ID);
+            int before = countGuides(player, TotemManualOnboarding.SECTION_ID, SECTION_ID);
             require(helper, before == 1,
                     "Moving the target guide to the offhand unexpectedly duplicated it");
             InteractionResult second = useTable(helper, player, InteractionHand.MAIN_HAND);
@@ -59,8 +61,10 @@ public final class ExcavationManualGameTest {
             require(helper, player.getMainHandItem().is(Items.BOOK)
                             && player.getMainHandItem().getCount() == 1,
                     "Refreshing an existing target guide consumed the remaining plain book");
-            require(helper, countGuides(player, SECTION_ID) == 1,
-                    "Refreshing an existing offhand target guide created a duplicate");
+            require(helper, countGuides(
+                            player, TotemManualOnboarding.SECTION_ID, SECTION_ID
+                    ) == 1,
+                    "Refreshing an existing shared manual created a duplicate");
             helper.succeed();
         } finally {
             player.discard();
@@ -69,7 +73,7 @@ public final class ExcavationManualGameTest {
 
     @SuppressWarnings("removal")
     @GameTest(maxTicks = 40)
-    public void basicGuideIsKeptAndFullInventoryDropsOneRecoverableTargetGuide(
+    public void basicGuideIsUpdatedInPlaceWhenTheInventoryIsFull(
             GameTestHelper helper
     ) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -93,37 +97,30 @@ public final class ExcavationManualGameTest {
             require(helper, result.consumesAction(),
                     "A canonical basic-guide crafting-table interaction was not handled");
             require(helper, player.getMainHandItem() == basic
-                            && exactSections(basic, TotemManualOnboarding.SECTION_ID),
-                    "The basic guide was consumed, replaced, or merged with Excavation");
-            require(helper, countGuides(player, SECTION_ID) == 0,
-                    "The supposedly full inventory accepted the separate Excavation guide");
+                            && exactSections(
+                            basic, TotemManualOnboarding.SECTION_ID, SECTION_ID
+                    ),
+                    "The basic guide was not updated in place with the Excavation chapter");
+            require(helper, advancementDone(player),
+                    "Updating the shared guide did not award the module advancement");
 
             // ServerPlayer.drop queues the entity during this tick. Wait until
-            // the subsequent entity tick has made it visible to world queries.
+            // the subsequent entity tick before proving that no split guide was created.
             helper.runAfterDelay(2, () -> {
                 try {
-                    List<ItemEntity> drops = nearbyDrops(player);
-                    require(helper, drops.size() == 1
-                                    && exactSections(drops.getFirst().getItem(), SECTION_ID),
-                            "A full inventory did not produce exactly one recoverable target-only guide");
-                    require(helper, advancementDone(player),
-                            "Safely dropped guide acquisition did not award the module advancement");
-
-                    ItemStack target = drops.getFirst().getItem().copy();
-                    drops.getFirst().discard();
-                    player.setItemInHand(InteractionHand.OFF_HAND, target);
+                    require(helper, nearbyDrops(player).isEmpty(),
+                            "Updating the shared manual dropped an obsolete split guide");
                     useTable(helper, player, InteractionHand.MAIN_HAND);
 
-                    // A duplicate drop would pass through the same deferred path.
                     helper.runAfterDelay(2, () -> {
                         try {
                             require(helper, nearbyDrops(player).isEmpty(),
-                                    "Refreshing the offhand target guide dropped a duplicate into the world");
-                            require(helper,
-                                    exactSections(player.getOffhandItem(), SECTION_ID)
-                                            && exactSections(player.getMainHandItem(),
-                                            TotemManualOnboarding.SECTION_ID),
-                                    "Refreshing through a basic reference changed either guide's chapter scope");
+                                    "Refreshing the shared manual dropped a duplicate");
+                            require(helper, player.getMainHandItem() == basic
+                                            && exactSections(
+                                            basic, TotemManualOnboarding.SECTION_ID, SECTION_ID
+                                    ),
+                                    "Refreshing changed the shared manual's chapter scope or stack identity");
                             helper.succeed();
                         } finally {
                             player.discard();
@@ -179,28 +176,28 @@ public final class ExcavationManualGameTest {
         );
     }
 
-    private static ItemStack takeGuide(ServerPlayer player, Identifier sectionId) {
+    private static ItemStack takeGuide(ServerPlayer player, Identifier... sectionIds) {
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
             ItemStack stack = player.getInventory().getItem(slot);
-            if (exactSections(stack, sectionId)) {
+            if (exactSections(stack, sectionIds)) {
                 return player.getInventory().removeItemNoUpdate(slot);
             }
         }
         return null;
     }
 
-    private static int countGuides(ServerPlayer player, Identifier sectionId) {
+    private static int countGuides(ServerPlayer player, Identifier... sectionIds) {
         int total = 0;
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
-            if (exactSections(player.getInventory().getItem(slot), sectionId)) total++;
+            if (exactSections(player.getInventory().getItem(slot), sectionIds)) total++;
         }
         return total;
     }
 
-    private static boolean exactSections(ItemStack stack, Identifier sectionId) {
+    private static boolean exactSections(ItemStack stack, Identifier... sectionIds) {
         return TotemManualAssembler.isCanonical(stack)
                 && TotemManualAssembler.sections(stack).stream()
-                .map(section -> section.id()).toList().equals(List.of(sectionId));
+                .map(section -> section.id()).toList().equals(List.of(sectionIds));
     }
 
     private static boolean advancementDone(ServerPlayer player) {

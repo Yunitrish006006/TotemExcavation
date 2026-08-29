@@ -29,10 +29,10 @@ public final class HammerDurabilityGameTest {
 
         try {
             player.setItemInHand(InteractionHand.MAIN_HAND, hammerStack);
-            HammerSelectionService.select(player, InteractionHand.MAIN_HAND, hammerStack, hammer,
-                    level, helper.absolutePos(firstRelative), true);
-            HammerSelectionService.select(player, InteractionHand.MAIN_HAND, hammerStack, hammer,
-                    level, helper.absolutePos(secondRelative), false);
+            HammerSelectionService.select(player, hammerStack, hammer,
+                    level, helper.absolutePos(firstRelative));
+            HammerSelectionService.select(player, hammerStack, hammer,
+                    level, helper.absolutePos(secondRelative));
             require(helper, hammerStack.get(ExcavationDataComponents.AREA_SELECTION) != null,
                     "Hammer selection was not stored before harvesting");
 

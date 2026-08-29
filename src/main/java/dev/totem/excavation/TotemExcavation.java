@@ -2,6 +2,7 @@ package dev.totem.excavation;
 
 import dev.totem.excavation.component.ExcavationDataComponents;
 import dev.totem.excavation.manual.ExcavationManual;
+import dev.totem.excavation.network.HammerSelectionNetworking;
 import dev.totem.excavation.registry.ExcavationItems;
 import dev.totem.excavation.session.ExcavationSessions;
 import net.fabricmc.api.ModInitializer;
@@ -18,6 +19,7 @@ public final class TotemExcavation implements ModInitializer {
         ExcavationManual.register();
         ExcavationDataComponents.register();
         ExcavationItems.register();
+        HammerSelectionNetworking.register();
         ExcavationSessions.register();
         LOGGER.info("Totem Excavation initialized");
     }
