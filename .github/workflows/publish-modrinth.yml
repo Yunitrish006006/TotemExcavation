@@ -66,6 +66,17 @@ jobs:
           curl "${args[@]}" "$api/version/$id" >/tmp/remote.json
           jq -e --arg p "$p" --arg v "$v" --arg mc "$mc" --arg f "$(basename "$artifact")" --arg sha "$sha" '.project_id==$p and .version_number==$v and .game_versions==[$mc] and .loaders==["fabric"] and (([.files[]|select(.primary==true)][0]//.files[0]).filename==$f) and (([.files[]|select(.primary==true)][0]//.files[0]).hashes.sha512==$sha)' /tmp/remote.json >/dev/null
           echo "version=$v" >> "$GITHUB_OUTPUT"; echo "version_id=$id" >> "$GITHUB_OUTPUT"; echo "sha512=$sha" >> "$GITHUB_OUTPUT"
+      - name: Submit project for public review
+        if: steps.release.outputs.should_publish == 'true' && steps.release.outputs.dry_run == 'false'
+        shell: bash
+        env: {MODRINTH_TOKEN: '${{ secrets.MODRINTH_TOKEN }}', MODRINTH_PROJECT_ID: '${{ secrets.MODRINTH_PROJECT_ID }}'}
+        run: |
+          set -euo pipefail
+          api=https://api.modrinth.com/v2; args=(--fail --silent --show-error --retry 3 -H "Authorization: ${MODRINTH_TOKEN}" -H 'User-Agent: Yunitrish006006/totem-excavation-publisher/2.0')
+          curl "${args[@]}" "$api/project/${MODRINTH_PROJECT_ID}" >/tmp/project-before-review.json; status="$(jq -er .status /tmp/project-before-review.json)"
+          if [[ "$status" != approved && "$status" != processing ]]; then curl "${args[@]}" -X PATCH -H 'Content-Type: application/json' --data '{"requested_status":"approved"}' "$api/project/${MODRINTH_PROJECT_ID}" >/dev/null; fi
+          curl "${args[@]}" "$api/project/${MODRINTH_PROJECT_ID}" >/tmp/project-after-review.json
+          jq -e '.status == "approved" or .status == "processing" or .requested_status == "approved"' /tmp/project-after-review.json >/dev/null
       - name: Record verified publication
         if: steps.release.outputs.should_publish == 'true' && steps.release.outputs.dry_run == 'false'
         shell: bash
