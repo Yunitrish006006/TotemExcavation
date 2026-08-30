@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
 
 /** Survival regression for one request per press and full held-attack crack suppression. */
 @SuppressWarnings("UnstableApiUsage")
@@ -65,6 +66,8 @@ public final class HammerSelectionHoldClientGameTest implements FabricClientGame
                         && selection.firstCorner().equals(TARGET);
             });
 
+            captureDepthTestedOutline(context, singleplayer);
+
             // A second physical press on the same block is one new request and clears A.
             context.getInput().pressMouse(0);
             context.waitFor(client -> client.player.getMainHandItem().get(
@@ -85,6 +88,37 @@ public final class HammerSelectionHoldClientGameTest implements FabricClientGame
             context.getInput().releaseMouse(0);
             context.getInput().releaseShift();
         }
+    }
+
+    private static void captureDepthTestedOutline(
+            ClientGameTestContext context,
+            TestSingleplayerContext singleplayer) {
+        context.getInput().releaseMouse(0);
+        context.getInput().releaseShift();
+        context.getInput().lookAt(TARGET);
+        context.waitTicks(2);
+        context.getInput().holdShift();
+
+        singleplayer.getServer().runCommand("fill -1 80 -2 1 83 -2 minecraft:stone_bricks");
+        context.waitFor(client -> client.level.getBlockState(new BlockPos(0, 81, -2)).is(Blocks.STONE_BRICKS));
+
+        AABB partlyOccludedSelection = AABB.encapsulatingFullBlocks(
+                new BlockPos(-2, 80, -3),
+                new BlockPos(2, 82, -3)
+        ).inflate(0.002D);
+        // Fabric's screenshot helper bypasses the outer frame collector used by
+        // BEFORE_GIZMOS, so submit the production outline into that same collector.
+        context.runOnClient(client -> {
+            try (var ignored = client.levelRenderer.collectPerFrameRenderThreadGizmos()) {
+                ExcavationOutlineRenderer.addSelectionOutline(partlyOccludedSelection);
+            }
+        });
+        context.takeScreenshot("totem-excavation-selection-depth-tested");
+
+        singleplayer.getServer().runCommand("fill -1 80 -2 1 83 -2 minecraft:air");
+        context.waitFor(client -> client.level.getBlockState(new BlockPos(0, 81, -2)).isAir());
+        context.getInput().lookAt(TARGET);
+        context.waitTicks(2);
     }
 
     private static void require(boolean condition, String message) {

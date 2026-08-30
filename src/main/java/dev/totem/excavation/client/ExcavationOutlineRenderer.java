@@ -1,13 +1,14 @@
 package dev.totem.excavation.client;
 
+import dev.totem.core.api.v1.client.world.TotemWorldOutlines;
+import dev.totem.core.api.v1.client.world.WorldOutlineOcclusion;
+import dev.totem.core.api.v1.client.world.WorldOutlineStyle;
 import dev.totem.excavation.component.AreaSelection;
 import dev.totem.excavation.component.ExcavationDataComponents;
 import dev.totem.excavation.registry.ExcavationItems;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.gizmos.GizmoStyle;
-import net.minecraft.gizmos.Gizmos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 
@@ -16,6 +17,11 @@ import net.minecraft.world.phys.AABB;
  * intentionally separate from all common/server classes.
  */
 public final class ExcavationOutlineRenderer {
+    private static final WorldOutlineStyle SELECTION_STYLE = new WorldOutlineStyle(
+            0xFF4FC3F7,
+            1.5F,
+            WorldOutlineOcclusion.DEPTH_TESTED
+    );
     private static boolean registered;
 
     private ExcavationOutlineRenderer() {
@@ -45,6 +51,12 @@ public final class ExcavationOutlineRenderer {
         }
         var second = selection.secondCorner().orElse(selection.firstCorner());
         AABB box = AABB.encapsulatingFullBlocks(selection.firstCorner(), second).inflate(0.002D);
-        Gizmos.cuboid(box, GizmoStyle.stroke(0xFF4FC3F7, 1.5F)).setAlwaysOnTop();
+        addSelectionOutline(box);
+    }
+
+    static void addSelectionOutline(AABB box) {
+        // Keep the default depth-tested gizmo behavior so terrain occludes the
+        // portions of the selection outline that the local player cannot see.
+        TotemWorldOutlines.cuboid(box, SELECTION_STYLE);
     }
 }
