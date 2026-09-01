@@ -65,6 +65,7 @@ jobs:
             echo 'Release artifact metadata did not match the expected module contract.' >&2
             exit 1
           fi
+          echo "Verified release artifact metadata for ${MODULE_ID} ${v}."
           api=https://api.modrinth.com/v2; args=(--silent --show-error --retry 3 -H "Authorization: ${MODRINTH_TOKEN}" -H "User-Agent: Yunitrish006006/${MODULE_ID}-publisher/2.0")
           modrinth_request() {
             local output="$1"
@@ -84,7 +85,9 @@ jobs:
           project_ref="${project_ref#https://modrinth.com/project/}"
           project_ref="${project_ref#https://modrinth.com/mod/}"
           project_ref="${project_ref%/}"
+          echo 'Normalized configured Modrinth project reference.'
           modrinth_request /tmp/project.json "$api/project/${project_ref}"
+          echo 'Fetched configured Modrinth project.'
           if ! p="$(jq -er .id /tmp/project.json)"; then
             previous_marker="$(find .github/staging -maxdepth 1 -name 'modrinth-published-*.json' -print | sort -V | tail -1)"
             [[ -n "$previous_marker" ]] || { echo 'Project response had no id and no previous release marker was available.' >&2; jq '{id,slug,status}' /tmp/project.json >&2 || true; exit 1; }
@@ -96,8 +99,12 @@ jobs:
             jq -e --arg p "$p" '.id==$p' /tmp/project.json >/dev/null || { echo 'Resolved Modrinth project identity did not match.' >&2; exit 1; }
           fi
           sha="$(sha512sum "$artifact"|awk '{print $1}')"
+          [[ -n "$sha" ]] || { echo 'Could not calculate the release artifact SHA-512.' >&2; exit 1; }
+          echo 'Resolved Modrinth project and release artifact identity.'
           if [[ "$DRY_RUN" == true ]]; then echo "version=$v" >> "$GITHUB_OUTPUT"; echo "sha512=$sha" >> "$GITHUB_OUTPUT"; exit 0; fi
           modrinth_request /tmp/versions.json "$api/project/${p}/version?include_changelog=false"; count="$(jq --arg v "$v" '[.[]|select(.version_number==$v)]|length' /tmp/versions.json)"
+          [[ "$count" =~ ^[0-9]+$ ]] || { echo 'Could not count matching Modrinth versions.' >&2; jq 'type' /tmp/versions.json >&2 || true; exit 1; }
+          echo "Found ${count} existing Modrinth version(s) matching ${v}."
           if [[ "$count" != 0 ]]; then
             test "$count" = 1 || { echo "Expected one existing Modrinth ${v}, found ${count}." >&2; exit 1; }
             id="$(jq -er --arg v "$v" '.[]|select(.version_number==$v)|.id' /tmp/versions.json)"
