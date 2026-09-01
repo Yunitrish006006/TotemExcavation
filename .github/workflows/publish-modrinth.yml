@@ -107,8 +107,9 @@ jobs:
           echo "Found ${count} existing Modrinth version(s) matching ${v}."
           if [[ "$count" != 0 ]]; then
             test "$count" = 1 || { echo "Expected one existing Modrinth ${v}, found ${count}." >&2; exit 1; }
-            id="$(jq -er --arg v "$v" '.[]|select(.version_number==$v)|.id' /tmp/versions.json)"
-            rsha="$(jq -er --arg v "$v" '.[]|select(.version_number==$v)|(([.files[]|select(.primary==true)][0]//.files[0]).hashes.sha512)' /tmp/versions.json)"
+            id="$(jq -er --arg v "$v" '.[]|select(.version_number==$v)|.id' /tmp/versions.json)" || { echo "Existing Modrinth ${v} had no version id." >&2; exit 1; }
+            modrinth_request /tmp/existing-version.json "$api/version/$id"
+            rsha="$(jq -er '(([.files[]|select(.primary==true)][0]//.files[0]).hashes.sha512)' /tmp/existing-version.json)" || { echo "Existing Modrinth ${v} had no primary file SHA-512." >&2; jq '{version_number,files:[.files[]|{filename,primary,hashes}]}' /tmp/existing-version.json >&2 || true; exit 1; }
             [[ "$rsha" == "$sha" ]] || { echo "Existing Modrinth ${v} SHA-512 differs: remote=${rsha}, local=${sha}." >&2; exit 1; }
             echo "Verified byte-identical existing Modrinth ${MODULE_ID} ${v}."
           else
