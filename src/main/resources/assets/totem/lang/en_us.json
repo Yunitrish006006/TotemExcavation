@@ -8,7 +8,7 @@
   "book.totem.excavation_manual.title": "Excavation Method Guide",
   "book.totem.excavation_manual.page.1": "HAMMERS\n\nCraft a hammer for your tool tier. Each tier limits the longest selectable axis and uses normal durability, harvest, loot, and protection rules.",
   "book.totem.excavation_manual.page.2": "SELECT\n\nSneak + left-click an eligible block for Corner A, then another for B. Clicking the same/selected corner cancels; another block restarts A.",
-  "book.totem.excavation_manual.page.3": "EXCAVATE\n\nBreak an eligible selected block normally to begin bounded server-side mining. Only loaded, permitted blocks are changed.",
+  "book.totem.excavation_manual.page.3": "EXCAVATE & HARVEST\n\nBreak a selected block to begin bounded mining. Right-click a mature crop with a hoe to harvest and replant it; this costs 1 durability.",
   "itemGroup.totem_excavation.main": "Totem Excavation",
   "tag.block.totem.excavation.hammer_efficiency": "Hammer Efficiency",
   "tag.block.totem.excavation.hammer_mineable": "Hammer Mineable",

@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "dev.totem.excavation.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "HoeItemMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

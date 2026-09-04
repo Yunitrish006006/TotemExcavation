@@ -10,6 +10,7 @@
     "main": ["dev.totem.excavation.TotemExcavation"],
     "client": ["dev.totem.excavation.client.TotemExcavationClient"]
   },
+  "mixins": ["totem-excavation.mixins.json"],
   "depends": {
     "fabricloader": ">=0.19.3",
     "fabric-api": "*",

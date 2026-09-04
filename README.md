@@ -19,6 +19,10 @@ Selection is held on the exact hammer stack in the main hand.
   and clear Corner B.
 - Left-click normally inside a complete selection to start bounded server-side
   excavation.
+- Right-click a mature crop with any hoe to harvest and replant it. This uses the
+  normal loot table and Fortune enchantment, reserves one planting item, and
+  costs one point of hoe durability. Wheat, carrots, potatoes, beetroot, nether
+  wart and cocoa are supported.
 - Right-click is never consumed by the hammer, so vanilla offhand use remains
   available.
 
