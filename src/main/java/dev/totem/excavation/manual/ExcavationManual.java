@@ -26,7 +26,7 @@ public final class ExcavationManual {
     public static void register() {
         TotemModuleManualSource.register(
                 SECTION,
-                Identifier.fromNamespaceAndPath("deadrecall", "excavation_manual"),
+                Identifier.fromNamespaceAndPath("totem", "excavation_manual"),
                 state -> state.is(Blocks.CRAFTING_TABLE)
         );
     }

@@ -25,7 +25,7 @@ public final class ExcavationManualGameTest {
     private static final Identifier SECTION_ID =
             Identifier.fromNamespaceAndPath("totem", "excavation/manual");
     private static final Identifier ADVANCEMENT_ID =
-            Identifier.fromNamespaceAndPath("deadrecall", "excavation_manual");
+            Identifier.fromNamespaceAndPath("totem", "excavation_manual");
     private static final BlockPos TABLE = new BlockPos(1, 1, 1);
 
     @SuppressWarnings("removal")
@@ -49,7 +49,7 @@ public final class ExcavationManualGameTest {
                     ),
                     "The interaction did not create a shared manual with Core and Excavation chapters");
             require(helper, advancementDone(player),
-                    "Successful guide acquisition did not award deadrecall:excavation_manual");
+                    "Successful guide acquisition did not award totem:excavation_manual");
 
             player.setItemInHand(InteractionHand.OFF_HAND, target);
             int before = countGuides(player, TotemManualOnboarding.SECTION_ID, SECTION_ID);

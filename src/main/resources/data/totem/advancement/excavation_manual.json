@@ -1,5 +1,5 @@
 {
-  "parent": "deadrecall:excavation_root",
+  "parent": "totem:excavation_root",
   "criteria": {
     "has_manual": {
       "trigger": "minecraft:impossible"

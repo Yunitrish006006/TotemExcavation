@@ -1,8 +1,11 @@
 {
-  "parent": "deadrecall:excavation_manual",
+  "parent": "totem:excavation_manual",
   "criteria": {
     "crafted_wooden_hammer": {
-      "trigger": "minecraft:impossible"
+      "conditions": {
+        "recipe_id": "totem:excavation/wooden_hammer"
+      },
+      "trigger": "minecraft:recipe_crafted"
     }
   },
   "display": {
