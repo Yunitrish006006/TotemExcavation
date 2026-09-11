@@ -130,7 +130,7 @@ jobs:
           sha="$(sha512sum "$artifact"|awk '{print $1}')"
           [[ -n "$sha" ]] || { echo 'Could not calculate the release artifact SHA-512.' >&2; exit 1; }
           echo 'Resolved Modrinth project and release artifact identity.'
-          test "$sha" = "$(jq -er .sha512 ".github/staging/release-validation-${v}.json")"
+          test "$sha" = "$(jq -er .sha512 ".github/staging/release-validation-${v}.json")" || { echo "Release JAR SHA-512 differs from validated artifact: $sha" >&2; exit 1; }
           if [[ "$DRY_RUN" == true ]]; then echo "version=$v" >> "$GITHUB_OUTPUT"; echo "sha512=$sha" >> "$GITHUB_OUTPUT"; exit 0; fi
           modrinth_request /tmp/versions.json "$api/project/${p}/version?include_changelog=false"; count="$(jq --arg v "$v" '[.[]|select(.version_number==$v)]|length' /tmp/versions.json)"
           [[ "$count" =~ ^[0-9]+$ ]] || { echo 'Could not count matching Modrinth versions.' >&2; jq 'type' /tmp/versions.json >&2 || true; exit 1; }
