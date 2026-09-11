@@ -1,0 +1,11 @@
+{
+  "version": "0.1.14",
+  "java": 25,
+  "minecraft": "26.2",
+  "artifact": "totem-excavation-0.1.14.jar",
+  "sha512": "979aeaa2d1d60b8aad3bf3b9782ab51b8c18998f173f55d78d4503c6f0004bf770f89db97699e9f16b319b9b74c2906293dd13c1d3634c4e5a9a0f975c7a0629",
+  "unit_tests": 11,
+  "core_dependency": ">=0.7.21 <0.8.0",
+  "validation": "Versioned test, assemble and compileGametestJava passed locally. Previous source validation includes Nexus 108 server GameTests and VanillaTweaks/Alchemy en_us and zh_tw client tests, plus Alchemy/Core localized manual screenshots. Exact release commit CI is required by the publisher.",
+  "independent_review": "Independent source, localization and release workflow reviews completed; reported filename and whitespace fixes applied."
+}
