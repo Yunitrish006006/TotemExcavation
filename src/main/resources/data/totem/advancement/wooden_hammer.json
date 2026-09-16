@@ -3,7 +3,7 @@
   "criteria": {
     "crafted_wooden_hammer": {
       "conditions": {
-        "recipe_id": "totem:excavation/wooden_hammer"
+        "recipes": "totem:excavation/wooden_hammer"
       },
       "trigger": "minecraft:recipe_crafted"
     }

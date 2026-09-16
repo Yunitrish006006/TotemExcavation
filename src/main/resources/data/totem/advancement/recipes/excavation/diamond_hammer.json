@@ -7,7 +7,7 @@
     },
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
-      "conditions": { "recipe": "totem:excavation/diamond_hammer" }
+      "conditions": { "recipes": "totem:excavation/diamond_hammer" }
     }
   },
   "requirements": [["has_material", "has_the_recipe"]],

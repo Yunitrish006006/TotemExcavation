@@ -19,7 +19,7 @@ public final class HammerSelectionHoldClientGameTest implements FabricClientGame
     @Override
     public void runTest(ClientGameTestContext context) {
         try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
-            singleplayer.getClientLevel().waitForChunksRender();
+            singleplayer.getConnection().waitForChunksRender();
             singleplayer.getServer().runCommand("gamemode survival @a");
             singleplayer.getServer().runCommand("fill -2 79 -2 2 79 2 minecraft:stone");
             singleplayer.getServer().runCommand("tp @a 0 80 0");

@@ -7,7 +7,7 @@
     },
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
-      "conditions": { "recipe": "totem:excavation/wooden_hammer" }
+      "conditions": { "recipes": "totem:excavation/wooden_hammer" }
     }
   },
   "requirements": [["has_material", "has_the_recipe"]],
