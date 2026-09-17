@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x gradlew .lockstep/TotemCore/gradlew
-          ./.lockstep/TotemCore/gradlew -p .lockstep/TotemCore jar --no-daemon --stacktrace
+          ./.lockstep/TotemCore/gradlew -p .lockstep/TotemCore jar --init-script ${GITHUB_WORKSPACE}/.github/scripts/lavapipe.gradle --no-daemon --stacktrace
           core_version="$(sed -n 's/^mod_version=//p' .lockstep/TotemCore/gradle.properties)"
           test "$core_version" = '0.7.23'
           core_jar="${GITHUB_WORKSPACE}/.lockstep/TotemCore/build/libs/totem-core-${core_version}.jar"
@@ -51,13 +51,13 @@ jobs:
         run: |
           set -euo pipefail
           ./gradlew -PtotemCoreJar="$CORE_JAR" \
-            test assemble compileGametestJava --no-daemon --stacktrace
+            test assemble compileGametestJava --init-script ${GITHUB_WORKSPACE}/.github/scripts/lavapipe.gradle --no-daemon --stacktrace
 
       - name: Run server GameTests
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew -PtotemCoreJar="$CORE_JAR" runGameTest --no-daemon --stacktrace
+          ./gradlew -PtotemCoreJar="$CORE_JAR" runGameTest --init-script ${GITHUB_WORKSPACE}/.github/scripts/lavapipe.gradle --no-daemon --stacktrace
 
       - name: Run client GameTests
         shell: bash
@@ -66,7 +66,7 @@ jobs:
           export SDL_VIDEO_DRIVER=x11
           export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json
           export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
-          xvfb-run -a ./gradlew -PtotemCoreJar="$CORE_JAR" runClientGameTest --no-daemon --stacktrace
+          xvfb-run -a ./gradlew -PtotemCoreJar="$CORE_JAR" runClientGameTest --init-script ${GITHUB_WORKSPACE}/.github/scripts/lavapipe.gradle --no-daemon --stacktrace
 
       - name: Bind validated release artifact to this Build
         shell: bash
