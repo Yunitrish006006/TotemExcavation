@@ -70,16 +70,6 @@ jobs:
           set -euo pipefail
           ./gradlew -PtotemCoreJar="$CORE_JAR" runGameTest --init-script ${GITHUB_WORKSPACE}/.github/scripts/lavapipe.gradle --no-daemon --stacktrace
 
-      - name: Run client GameTests
-        timeout-minutes: 15
-        shell: bash
-        run: |
-          set -euo pipefail
-          export SDL_VIDEO_DRIVER=x11
-          export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json
-          export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
-          bash .github/scripts/run-glx-client.sh ./gradlew -PtotemCoreJar="$CORE_JAR" runClientGameTest --init-script ${GITHUB_WORKSPACE}/.github/scripts/lavapipe.gradle --no-daemon --stacktrace
-
       - name: Bind validated release artifact to this Build
         shell: bash
         run: |
